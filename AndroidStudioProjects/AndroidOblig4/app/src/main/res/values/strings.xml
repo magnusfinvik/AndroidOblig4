@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">AndroidOblig4</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="map_type">Map_type</string>
+    <string name="normal">Normal</string>
+    <string name="hybrid">Hybrid</string>
+    <string name="satellite">Satellite</string>
+    <string name="terrain">Terrain</string>
+    <string name="deletePositions">Delete positions</string>
+    <string name="exit">Exit</string>
+</resources>
