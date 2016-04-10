@@ -19,12 +19,12 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MapsActivity extends AppCompatActivity {
 
     private GoogleMap mMap;
     public SharedPreferences sharedPreferences;
-    private ArrayList<LatLng> positions = null;
-    public int count = 0;
+    private ArrayList<LatLng> positionsList = null;
+    public int locationCount = 0;
     LocationManager locationManager;
 
     private final int[] TYPES_OF_MAP = {GoogleMap.MAP_TYPE_NORMAL, GoogleMap.MAP_TYPE_HYBRID,
@@ -32,7 +32,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 GoogleMap.MAP_TYPE_NONE,};
 
     private final int MAP_TYPE_NORMAL = 0;
-    private final int MAP_TYPE_HYBIRD = 1;
+    private final int MAP_TYPE_HYBRID = 1;
     private final int MAP_TYPE_SATELLITE = 2;
     private final int MAP_TYPE_TERRAIN = 3;
 
@@ -41,45 +41,43 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_maps);
 
-        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
-
-        positions = new ArrayList<LatLng>();
+        positionsList = new ArrayList<LatLng>();
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-    }
+        SupportMapFragment fragMap = (SupportMapFragment)getSupportFragmentManager().findFragmentById(R.id.map);
+        mMap = fragMap.getMap();
 
-    @Override
-    public void onMapReady(final GoogleMap googleMap) {
-        mMap = googleMap;
+        UiSettings uiSettings = mMap.getUiSettings();
+        uiSettings.setZoomControlsEnabled(true);
+
+
         sharedPreferences = getSharedPreferences("location", 0);
-        count = sharedPreferences.getInt("locationsCount", 0);
+        locationCount = sharedPreferences.getInt("locationCount", 0);
         String zoom = sharedPreferences.getString("zoom", "0");
-        if(count!=0){
+        if(locationCount != 0){
             String lat = "";
             String lng = "";
 
-            for(int i = 0; i < count; i++){
+            for(int i = 0; i < locationCount; i++){
                 lat = sharedPreferences.getString("lat" + i, "0");
                 lng = sharedPreferences.getString("lng" + i, "0");
                 addMarkerToMap(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng)));
             }
-            googleMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng))));
-            googleMap.animateCamera(CameraUpdateFactory.zoomTo(Float.parseFloat(zoom)));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(Double.parseDouble(lat), Double.parseDouble(lng))));
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(Float.parseFloat(zoom)));
         }
         mMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
 
             @Override
             public void onMapClick(LatLng position) {
-                count++;
+                locationCount++;
                 addMarkerToMap(position);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("lat" + Integer.toString((count - 1)), Double.toString(position.latitude));
-                editor.putString("lng" + Integer.toString((count - 1)), Double.toString(position.longitude));
-                editor.putInt("locationCount", count);
-                editor.putString("zoom", Float.toString(googleMap.getCameraPosition().zoom));
-                editor.commit();
+                editor.putString("lat" + Integer.toString((locationCount - 1)), Double.toString(position.latitude));
+                editor.putString("lng" + Integer.toString((locationCount - 1)), Double.toString(position.longitude));
+                editor.putInt("locationCount", locationCount);
+                editor.putString("zoom", Float.toString(mMap.getCameraPosition().zoom));
+                editor.apply();
             }
         });
 
@@ -90,8 +88,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         PolylineOptions polylineOptions = new PolylineOptions();
         polylineOptions.color(Color.RED);
         polylineOptions.width(5);
-        positions.add(latLng);
-        polylineOptions.addAll(positions);
+        positionsList.add(latLng);
+        polylineOptions.addAll(positionsList);
         mMap.addPolyline(polylineOptions);
     }
 
@@ -113,19 +111,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()){
             case R.id.normal:
-                mMap.setMapType(MAP_TYPE_NORMAL);
+                mMap.setMapType(TYPES_OF_MAP[MAP_TYPE_NORMAL]);
                 itemIsChecked(item);
                 return true;
             case R.id.hybrid:
-                mMap.setMapType(MAP_TYPE_HYBIRD);
+                mMap.setMapType(TYPES_OF_MAP[MAP_TYPE_HYBRID]);
                 itemIsChecked(item);
                 return true;
             case R.id.satellite:
-                mMap.setMapType(MAP_TYPE_SATELLITE);
+                mMap.setMapType(TYPES_OF_MAP[MAP_TYPE_SATELLITE]);
                 itemIsChecked(item);
                 return true;
             case R.id.terrain:
-                mMap.setMapType(MAP_TYPE_TERRAIN);
+                mMap.setMapType(TYPES_OF_MAP[MAP_TYPE_TERRAIN]);
                 itemIsChecked(item);
                 return true;
             case R.id.deletePositions:
@@ -161,7 +159,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void deletePositions() {
         AlertDialog dialog = new AlertDialog.Builder(MapsActivity.this).create();
         dialog.setTitle("Delete");
-        dialog.setMessage("Do you want to delete all positions?");
+        dialog.setMessage("Do you want to delete all positionsList?");
         dialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Yes",
                 new DialogInterface.OnClickListener() {
                     @Override
@@ -180,11 +178,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void removeAllPositions() {
-     mMap.clear();
+        mMap.clear();
         SharedPreferences.Editor editor = sharedPreferences.edit();
         editor.clear();
         editor.commit();
-        count = 0;
+        positionsList.clear();
+        locationCount = 0;
     }
 
     private void itemIsChecked(MenuItem item) {
